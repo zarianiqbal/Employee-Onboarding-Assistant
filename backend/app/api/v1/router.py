@@ -7,4 +7,8 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
+from app.api.v1 import employees, tasks
+
 api_router = APIRouter()
+api_router.include_router(employees.router)
+api_router.include_router(tasks.router)
