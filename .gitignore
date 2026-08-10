@@ -1,0 +1,45 @@
+# --- Python / backend ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.log
+
+# --- Node / frontend ---
+node_modules/
+dist/
+dist-ssr/
+build/
+.vite/
+*.local
+coverage/
+
+# --- Environment / secrets ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# --- Terraform ---
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+*.tfvars
+!example.tfvars
+.terraform.lock.hcl
+
+# --- Editor / OS ---
+.DS_Store
+.idea/
+.vscode/
+*.swp
+Thumbs.db
