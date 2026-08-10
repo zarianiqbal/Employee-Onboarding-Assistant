@@ -19,6 +19,7 @@ dist-ssr/
 build/
 .vite/
 *.local
+*.tsbuildinfo
 coverage/
 
 # --- Environment / secrets ---
