@@ -4,6 +4,7 @@ import { RouterProvider, createBrowserRouter, Navigate } from 'react-router-dom'
 
 import { App } from './App';
 import { RegistrationPage } from './features/registration/RegistrationPage';
+import { DashboardPage } from './features/dashboard/DashboardPage';
 import './styles/global.css';
 
 const router = createBrowserRouter([
@@ -13,6 +14,7 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <Navigate to="/register" replace /> },
       { path: 'register', element: <RegistrationPage /> },
+      { path: 'employees/:employeeId', element: <DashboardPage /> },
     ],
   },
 ]);
