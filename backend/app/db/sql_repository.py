@@ -40,6 +40,7 @@ class SqlRepository:
     @contextmanager
     def _connect(self):
         import pyodbc  # lazy
+
         from app.core.azure_clients import get_credential
 
         token = get_credential().get_token(_TOKEN_SCOPE).token
