@@ -4,11 +4,13 @@ name: Deploy to Azure
 # (no stored cloud secrets), applies migrations, deploys the backend to App
 # Service, and publishes the frontend build. Gated behind the `production`
 # environment so a reviewer approves each release.
+#
+# Triggered manually (workflow_dispatch) so it never runs against an
+# unconfigured subscription on every push. Once the Azure environment is
+# provisioned and the required secrets/vars are set, add a `push` trigger on
+# `main` to deploy automatically on merge.
 
 on:
-  push:
-    branches: [main]
-    paths: ['backend/**', 'frontend/**', 'database/**', 'infra/**']
   workflow_dispatch:
 
 permissions:
