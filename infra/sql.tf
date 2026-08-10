@@ -6,11 +6,11 @@
 # backend never needs a connection-string password.
 
 resource "azurerm_mssql_server" "main" {
-  name                         = "sql-${local.name_prefix}-${random_string.suffix.result}"
-  resource_group_name          = azurerm_resource_group.main.name
-  location                     = azurerm_resource_group.main.location
-  version                      = "12.0"
-  minimum_tls_version          = "1.2"
+  name                          = "sql-${local.name_prefix}-${random_string.suffix.result}"
+  resource_group_name           = azurerm_resource_group.main.name
+  location                      = azurerm_resource_group.main.location
+  version                       = "12.0"
+  minimum_tls_version           = "1.2"
   public_network_access_enabled = true
 
   # Entra-only auth: no SQL admin username/password.

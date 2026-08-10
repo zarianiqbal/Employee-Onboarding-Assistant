@@ -36,13 +36,13 @@ resource "azurerm_linux_web_app" "backend" {
 
   app_settings = {
     # Endpoints only — authentication is via managed identity, not keys.
-    "AZURE_SQL_SERVER"          = azurerm_mssql_server.main.fully_qualified_domain_name
-    "AZURE_SQL_DATABASE"        = azurerm_mssql_database.main.name
-    "AZURE_STORAGE_ACCOUNT_URL" = azurerm_storage_account.main.primary_blob_endpoint
-    "POLICIES_CONTAINER"        = azurerm_storage_container.policies.name
-    "DOCUMENTS_CONTAINER"       = azurerm_storage_container.documents.name
-    "AZURE_OPENAI_ENDPOINT"     = azurerm_cognitive_account.openai.endpoint
-    "AZURE_SEARCH_ENDPOINT"     = "https://${azurerm_search_service.main.name}.search.windows.net"
+    "AZURE_SQL_SERVER"                      = azurerm_mssql_server.main.fully_qualified_domain_name
+    "AZURE_SQL_DATABASE"                    = azurerm_mssql_database.main.name
+    "AZURE_STORAGE_ACCOUNT_URL"             = azurerm_storage_account.main.primary_blob_endpoint
+    "POLICIES_CONTAINER"                    = azurerm_storage_container.policies.name
+    "DOCUMENTS_CONTAINER"                   = azurerm_storage_container.documents.name
+    "AZURE_OPENAI_ENDPOINT"                 = azurerm_cognitive_account.openai.endpoint
+    "AZURE_SEARCH_ENDPOINT"                 = "https://${azurerm_search_service.main.name}.search.windows.net"
     "APPLICATIONINSIGHTS_CONNECTION_STRING" = azurerm_application_insights.main.connection_string
     "SCM_DO_BUILD_DURING_DEPLOYMENT"        = "true"
   }
