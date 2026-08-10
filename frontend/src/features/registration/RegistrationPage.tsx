@@ -72,6 +72,13 @@ export function RegistrationPage() {
       if (form.start_date) payload.start_date = form.start_date;
 
       const created = await api.createEmployee(payload);
+      // Fire off the Entra ID B2B invitation to the personal email. Best-effort:
+      // registration still succeeds even if the invite call fails.
+      try {
+        await api.inviteEmployee(created.employee_id);
+      } catch {
+        /* non-fatal — the record is created and can be re-invited later */
+      }
       navigate(`/employees/${created.employee_id}`);
     } catch (err) {
       setServerError(

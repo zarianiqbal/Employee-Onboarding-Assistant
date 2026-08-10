@@ -69,5 +69,6 @@ async def ready() -> dict[str, object]:
             "storage": settings.storage_configured,
             "openai": settings.openai_configured,
             "search": settings.search_configured,
+            "entra": settings.entra_configured,
         },
     }

@@ -5,6 +5,10 @@ gunicorn==23.0.0
 pydantic[email]==2.10.4
 pydantic-settings==2.7.1
 
+# Auth — Entra ID JWT validation + Graph calls
+pyjwt[crypto]==2.10.1
+httpx==0.28.1
+
 # Azure — secretless auth + service SDKs
 azure-identity==1.19.0
 azure-storage-blob==12.24.0

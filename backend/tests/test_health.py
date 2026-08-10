@@ -16,5 +16,5 @@ def test_ready_reports_integrations(client: TestClient) -> None:
     body = resp.json()
     assert body["status"] == "ready"
     # In local/test mode every Azure integration is disabled.
-    assert set(body["integrations"]) == {"sql", "storage", "openai", "search"}
+    assert set(body["integrations"]) == {"sql", "storage", "openai", "search", "entra"}
     assert all(v is False for v in body["integrations"].values())

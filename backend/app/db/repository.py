@@ -25,6 +25,7 @@ class Repository(Protocol):
     def get_employee(self, employee_id: int) -> dict: ...
     def update_employee(self, employee_id: int, changes: dict) -> dict: ...
     def list_employees(self, limit: int, offset: int) -> list[dict]: ...
+    def accept_invitation(self, employee_id: int, entra_object_id: str) -> dict: ...
 
     def get_checklist(self, employee_id: int) -> list[dict]: ...
     def update_task(self, employee_task_id: int, status: str, notes: str | None) -> dict: ...
@@ -102,6 +103,16 @@ class InMemoryRepository:
     def list_employees(self, limit: int, offset: int) -> list[dict]:
         ordered = sorted(self._employees.values(), key=lambda e: e["employee_id"])
         return [dict(e) for e in ordered[offset : offset + limit]]
+
+    def accept_invitation(self, employee_id: int, entra_object_id: str) -> dict:
+        with self._lock:
+            employee = self._employees.get(employee_id)
+            if employee is None:
+                raise NotFoundError(f"Employee {employee_id} not found")
+            employee["invitation_status"] = "Accepted"
+            employee["entra_object_id"] = entra_object_id
+            employee["updated_at"] = _now()
+            return dict(employee)
 
     # --- Checklist / tasks ------------------------------------------------
     def _assign_catalog(self, employee_id: int) -> None:

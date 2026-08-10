@@ -25,6 +25,11 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     cors_origins: str = "http://localhost:5173"
 
+    # Microsoft Entra ID (B2B invitations + JWT validation)
+    azure_tenant_id: str = ""
+    api_audience: str = ""  # this API's app (client) id; the expected JWT audience
+    invite_redirect_url: str = "http://localhost:5173/register"
+
     # Azure SQL
     azure_sql_server: str = ""
     azure_sql_database: str = ""
@@ -51,6 +56,10 @@ class Settings(BaseSettings):
     @property
     def sql_configured(self) -> bool:
         return bool(self.azure_sql_server and self.azure_sql_database)
+
+    @property
+    def entra_configured(self) -> bool:
+        return bool(self.azure_tenant_id and self.api_audience)
 
     @property
     def storage_configured(self) -> bool:

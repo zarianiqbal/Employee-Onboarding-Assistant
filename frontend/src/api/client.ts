@@ -51,6 +51,12 @@ export const api = {
 
   getEmployee: (id: number) => request<Employee>(`/api/v1/employees/${id}`),
 
+  inviteEmployee: (id: number) =>
+    request<{ invited_email: string; redeem_url: string; status: string; stub: boolean }>(
+      `/api/v1/employees/${id}/invite`,
+      { method: 'POST' },
+    ),
+
   updateEmployee: (id: number, changes: Partial<Employee>) =>
     request<Employee>(`/api/v1/employees/${id}`, {
       method: 'PATCH',

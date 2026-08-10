@@ -154,6 +154,23 @@ class SqlRepository:
             cur.execute(sql, offset, limit)
             return self._rows_as_dicts(cur)
 
+    def accept_invitation(self, employee_id: int, entra_object_id: str) -> dict:
+        sql = """
+            UPDATE Core.Employees
+            SET InvitationStatus = 'Accepted',
+                EntraObjectId = ?,
+                ExternalUserStateChangeDateTime = SYSUTCDATETIME(),
+                UpdatedAt = SYSUTCDATETIME()
+            WHERE EmployeeId = ?;
+        """
+        with self._connect() as conn:
+            cur = conn.cursor()
+            cur.execute(sql, entra_object_id, employee_id)
+            if cur.rowcount == 0:
+                raise NotFoundError(f"Employee {employee_id} not found")
+            conn.commit()
+        return self.get_employee(employee_id)
+
     # --- Checklist / tasks ------------------------------------------------
     def get_checklist(self, employee_id: int) -> list[dict]:
         # Ensure the catalog is assigned, then read it back.
