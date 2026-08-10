@@ -1,0 +1,37 @@
+# Local development stack: backend API + frontend dev server.
+#
+# Runs the whole app locally with zero Azure dependencies — the backend starts
+# in "local mode" (in-memory store, stub SAS/AI) and the frontend proxies /api
+# to it. Handy for demos and UI work.
+#
+#   docker compose up --build
+#   -> frontend at http://localhost:5173, API at http://localhost:8000
+
+services:
+  backend:
+    build: ./backend
+    ports:
+      - '8000:8000'
+    environment:
+      APP_ENV: local
+      CORS_ORIGINS: http://localhost:5173
+    healthcheck:
+      test: ['CMD', 'python', '-c', "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  frontend:
+    image: node:22-alpine
+    working_dir: /app
+    command: sh -c "npm ci --legacy-peer-deps && npm run dev -- --host"
+    ports:
+      - '5173:5173'
+    environment:
+      # Proxy target for the Vite dev server inside the compose network.
+      VITE_API_BASE_URL: ''
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
