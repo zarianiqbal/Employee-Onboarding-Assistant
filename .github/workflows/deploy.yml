@@ -1,0 +1,106 @@
+name: Deploy to Azure
+
+# Production deployment pipeline. Authenticates to Azure via OIDC federation
+# (no stored cloud secrets), applies migrations, deploys the backend to App
+# Service, and publishes the frontend build. Gated behind the `production`
+# environment so a reviewer approves each release.
+
+on:
+  push:
+    branches: [main]
+    paths: ['backend/**', 'frontend/**', 'database/**', 'infra/**']
+  workflow_dispatch:
+
+permissions:
+  id-token: write # required for OIDC login to Azure
+  contents: read
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+env:
+  AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+  BACKEND_APP_NAME: ${{ vars.BACKEND_APP_NAME }}
+
+jobs:
+  deploy-backend:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Build deployment package
+        working-directory: backend
+        run: |
+          pip install -r requirements.txt --target .python_packages/lib/site-packages
+          zip -r ../backend.zip app data scripts requirements.txt .python_packages
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Apply database migrations
+        run: |
+          for f in database/schema/*.sql database/migrations/*.sql database/seed/01_task_catalog.sql; do
+            echo "Applying $f"
+            sqlcmd -G -S "${{ vars.AZURE_SQL_SERVER }}" -d "${{ vars.AZURE_SQL_DATABASE }}" -i "$f"
+          done
+
+      - name: Deploy backend to App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ env.BACKEND_APP_NAME }}
+          package: backend.zip
+
+      - name: Ingest policy documents into Azure AI Search
+        working-directory: backend
+        run: |
+          pip install -r requirements.txt
+          python scripts/ingest_policies.py --recreate-index
+        env:
+          AZURE_OPENAI_ENDPOINT: ${{ vars.AZURE_OPENAI_ENDPOINT }}
+          AZURE_SEARCH_ENDPOINT: ${{ vars.AZURE_SEARCH_ENDPOINT }}
+
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    environment: production
+    needs: deploy-backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build frontend
+        working-directory: frontend
+        run: |
+          npm ci --legacy-peer-deps
+          npm run build
+        env:
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy static build to Azure Static Web Apps
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          action: upload
+          app_location: frontend/dist
+          skip_app_build: true
