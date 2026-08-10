@@ -1,0 +1,74 @@
+name: Database CI
+
+# Validate that the T-SQL schema + seed apply cleanly against a fresh SQL
+# Server, and that the Faker mock-data generator produces valid output.
+
+on:
+  push:
+    branches: [main]
+    paths: ['database/**', '.github/workflows/database.yml']
+  pull_request:
+    paths: ['database/**', '.github/workflows/database.yml']
+
+jobs:
+  apply-schema:
+    runs-on: ubuntu-latest
+    services:
+      sqlserver:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: 'Y'
+          # Ephemeral CI-only password for a throwaway container. Never used in
+          # any real environment — production is Entra-ID-only, no passwords.
+          MSSQL_SA_PASSWORD: 'Local_CI_Passw0rd!'
+        ports:
+          - 1433:1433
+        options: >-
+          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P 'Local_CI_Passw0rd!' -Q 'SELECT 1'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install sqlcmd
+        run: |
+          curl -sSL https://packages.microsoft.com/keys/microsoft.asc | sudo tee /etc/apt/trusted.gpg.d/microsoft.asc > /dev/null
+          curl -sSL https://packages.microsoft.com/config/ubuntu/22.04/prod.list | sudo tee /etc/apt/sources.list.d/mssql-release.list
+          sudo apt-get update
+          sudo ACCEPT_EULA=Y apt-get install -y mssql-tools18 unixodbc-dev
+          echo "/opt/mssql-tools18/bin" >> "$GITHUB_PATH"
+
+      - name: Create database
+        run: sqlcmd -C -S localhost -U sa -P 'Local_CI_Passw0rd!' -Q "CREATE DATABASE Onboarding;"
+
+      - name: Apply schema
+        run: |
+          for f in database/schema/*.sql; do
+            echo "Applying $f"
+            sqlcmd -C -S localhost -U sa -P 'Local_CI_Passw0rd!' -d Onboarding -i "$f"
+          done
+
+      - name: Apply migrations
+        run: |
+          for f in database/migrations/*.sql; do
+            echo "Applying $f"
+            sqlcmd -C -S localhost -U sa -P 'Local_CI_Passw0rd!' -d Onboarding -i "$f"
+          done
+
+      - name: Seed task catalog
+        run: sqlcmd -C -S localhost -U sa -P 'Local_CI_Passw0rd!' -d Onboarding -i database/seed/01_task_catalog.sql
+
+      - name: Generate + apply mock employees
+        run: |
+          pip install faker
+          python database/seed/generate_mock_employees.py --count 25 --out /tmp/mock.sql
+          sqlcmd -C -S localhost -U sa -P 'Local_CI_Passw0rd!' -d Onboarding -i /tmp/mock.sql
+
+      - name: Verify row counts
+        run: |
+          sqlcmd -C -S localhost -U sa -P 'Local_CI_Passw0rd!' -d Onboarding -Q \
+            "SELECT (SELECT COUNT(*) FROM Core.Employees) AS employees, \
+                    (SELECT COUNT(*) FROM Onboarding.Tasks) AS tasks, \
+                    (SELECT COUNT(*) FROM Onboarding.EmployeeTasks) AS employee_tasks;"
